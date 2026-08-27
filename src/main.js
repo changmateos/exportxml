@@ -114,7 +114,7 @@ async function run() {
         'La carpeta "' + folder.name + '" no devolvió ningún archivo.\n\n' +
           '• Verifica que la carpeta contenga facturas XML y que tu cuenta de Google pueda verla.' +
           hintSubcarpetas +
-          '\n\nSi ya revisaste lo anterior, recarga la página con Ctrl+F5 y confirma que el pie de página dice "v3" (si no lo dice, aún estás viendo una versión anterior).'
+          '\n\nSi ya revisaste lo anterior, recarga la página con Ctrl+F5 y confirma que el pie de página dice "v4" (si no lo dice, aún estás viendo una versión anterior).'
       );
       return;
     }

@@ -143,7 +143,8 @@ export async function listFiles(folderId, { recursive, clientId, onProgress }) {
         if (corporaAllDrives) url.searchParams.set('corpora', 'allDrives');
         if (pageToken) url.searchParams.set('pageToken', pageToken);
 
-        const data = await driveFetch(url, currentToken);
+        const res = await driveFetch(url, currentToken);
+        const data = await res.json();
         for (const f of data.files || []) {
           if (isFolder(f)) {
             folders.push({ id: f.id, name: f.name || '' });
