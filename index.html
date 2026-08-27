@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Consolida facturas CFDI (XML) de una carpeta de Google Drive en un solo archivo Excel." />
+    <title>ExportXML · Facturas a Excel</title>
+  </head>
+  <body>
+    <main class="app">
+      <header class="app__header">
+        <h1>ExportXML</h1>
+        <p class="app__subtitle">Consolida las facturas CFDI (XML) de una carpeta de Google&nbsp;Drive en un solo archivo Excel.</p>
+      </header>
+
+      <section class="card">
+        <div class="card__body">
+          <button id="btn-pick" class="btn btn--primary" type="button">
+            <span class="btn__icon">▦</span> Elegir carpeta en Google Drive
+          </button>
+          <p class="hint">
+            Todo se procesa en tu navegador: tus facturas no se suben a ningún servidor.
+            Se requiere acceso de <strong>solo lectura</strong> a Drive.
+          </p>
+        </div>
+
+        <div class="card__options">
+          <label class="check">
+            <input type="checkbox" id="opt-recursive" checked />
+            <span>Incluir subcarpetas</span>
+          </label>
+          <label class="check">
+            <input type="checkbox" id="opt-detect-errors" checked />
+            <span>Detectar errores comunes (RFC, UUID, totales, duplicados)</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="card card--progress" id="card-progress" hidden>
+        <div class="card__body">
+          <div class="progress__top">
+            <span id="progress-label" class="progress__label">Preparando…</span>
+            <span id="progress-count" class="progress__count"></span>
+          </div>
+          <div class="progress__bar"><div id="progress-fill" class="progress__fill"></div></div>
+        </div>
+      </section>
+
+      <section class="card card--result" id="card-result" hidden>
+        <div class="card__body">
+          <div id="result-summary" class="result__summary"></div>
+          <div class="result__actions">
+            <a id="btn-download" class="btn btn--primary" role="button" href="#">⬇ Descargar Excel</a>
+          </div>
+          <pre id="result-log" class="result__log" hidden></pre>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card__body">
+          <button id="btn-settings" class="btn btn--ghost" type="button">⚙ Configuración</button>
+          <p class="hint">Aquí se guardan tu Client ID y API Key de Google (solo en este navegador).</p>
+        </div>
+      </section>
+
+      <footer class="app__footer">
+        <p>Uso interno para despacho contable · Los datos no salen de tu equipo.</p>
+      </footer>
+    </main>
+
+    <!-- Modal de configuración -->
+    <div class="modal" id="modal-settings" hidden>
+      <div class="modal__backdrop" data-close></div>
+      <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <h2 id="settings-title">Configuración de Google</h2>
+        <p class="hint">
+          Obtén estos valores en <strong>Google Cloud Console</strong> (ver README del proyecto).
+          Se guardan únicamente en tu navegador (localStorage). Déjalos vacíos si ya están en el build.
+        </p>
+        <form id="form-settings" autocomplete="off">
+          <label class="field">
+            <span>Google OAuth Client ID</span>
+            <input type="text" id="input-client-id" placeholder="1234567890-xxxx.apps.googleusercontent.com" spellcheck="false" />
+          </label>
+          <label class="field">
+            <span>Google API Key</span>
+            <input type="text" id="input-api-key" placeholder="AIzaSy..." spellcheck="false" />
+          </label>
+          <div class="modal__actions">
+            <button type="button" class="btn btn--ghost" data-close>Cancelar</button>
+            <button type="submit" class="btn btn--primary">Guardar</button>
+          </div>
+        </form>
+        <button type="button" class="btn btn--ghost btn--small" id="btn-clear-settings">Borrar configuración guardada</button>
+      </div>
+    </div>
+
+    <!-- Carga de SDKs de Google -->
+    <script src="https://apis.google.com/js/api.js" defer></script>
+    <script src="https://accounts.google.com/gsi/client" defer></script>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
