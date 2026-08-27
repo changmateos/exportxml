@@ -86,3 +86,32 @@ export function buildAndDownload({ facturas, registro, summary }) {
   const stamp = summary.generatedAt.replace(/[^0-9A-Za-z]/g, '-');
   XLSX.writeFile(wb, `Facturas_${stamp}.xlsx`, { compression: true });
 }
+
+function csvCell(value) {
+  const s = value == null ? '' : String(value);
+  if (/[";\r\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+/**
+ * Descarga un CSV aparte con los archivos que no se pudieron procesar.
+ * Usa ";" como separador (compatible con Excel en español) y BOM UTF-8.
+ */
+export function downloadErrorReport(errores) {
+  const rows = [['Archivo', 'Estado', 'Error']];
+  for (const e of errores) {
+    rows.push([e.archivo || '', e.estado || '', e.error || '']);
+  }
+
+  const csv = '\uFEFF' + rows.map((r) => r.map(csvCell).join(';')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[^0-9A-Za-z]/g, '-');
+  a.download = `Errores_${stamp}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}

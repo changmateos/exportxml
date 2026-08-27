@@ -137,17 +137,67 @@ html, body {
 .stat__num { display: block; font-size: 24px; font-weight: 700; color: var(--primary); }
 .stat__lbl { display: block; font-size: 12px; color: var(--muted); }
 .result__actions { display: flex; gap: 10px; flex-wrap: wrap; }
-.result__log {
+
+.result__errors {
   margin-top: 16px;
   padding: 12px;
   background: #fff7f7;
   border: 1px solid #f3d6d6;
   border-radius: 8px;
-  color: var(--err);
-  font-size: 13px;
-  white-space: pre-wrap;
-  overflow-x: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
+.result__errors-text { color: var(--err); font-size: 13px; font-weight: 600; }
+
+/* Selector de campos */
+.card__title { margin: 0 0 4px; font-size: 18px; }
+.fields__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 14px 0 10px;
+}
+.fields__toolbar input[type="search"] {
+  flex: 1 1 180px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 14px;
+}
+.fields__toolbar input[type="search"]:focus { outline: 2px solid #c8d9ea; border-color: var(--primary); }
+.fields__count { color: var(--muted); font-size: 13px; margin-left: auto; }
+.fields__list {
+  max-height: 380px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fafbfc;
+}
+.fields__group { margin-bottom: 10px; }
+.fields__group-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--primary);
+  margin: 8px 0 4px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 3px;
+}
+.fields__item {
+  display: block;
+  font-size: 13px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--ink);
+  padding: 1px 0;
+  cursor: pointer;
+}
+.fields__item input { margin-right: 6px; accent-color: var(--primary); vertical-align: middle; }
 
 /* Modal */
 .modal { position: fixed; inset: 0; z-index: 50; }

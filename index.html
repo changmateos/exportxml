@@ -46,13 +46,30 @@
         </div>
       </section>
 
+      <section class="card" id="card-fields" hidden>
+        <div class="card__body">
+          <h2 class="card__title">Campos para el Excel</h2>
+          <p class="hint">Marca los campos (columnas) que quieres incluir. La columna <strong>Archivo</strong> siempre se incluye.</p>
+          <div class="fields__toolbar">
+            <input type="search" id="field-search" placeholder="Buscar campo…" />
+            <button type="button" id="btn-select-all" class="btn btn--ghost btn--small">Seleccionar todo</button>
+            <button type="button" id="btn-select-none" class="btn btn--ghost btn--small">Ninguno</button>
+            <span id="fields-count" class="fields__count"></span>
+          </div>
+          <div id="field-list" class="fields__list"></div>
+        </div>
+      </section>
+
       <section class="card card--result" id="card-result" hidden>
         <div class="card__body">
           <div id="result-summary" class="result__summary"></div>
           <div class="result__actions">
             <a id="btn-download" class="btn btn--primary" role="button" href="#">⬇ Descargar Excel</a>
           </div>
-          <pre id="result-log" class="result__log" hidden></pre>
+          <div id="result-errors" class="result__errors" hidden>
+            <span id="errors-count" class="result__errors-text"></span>
+            <button id="btn-errors" type="button" class="btn btn--ghost btn--small">Descargar reporte de errores</button>
+          </div>
         </div>
       </section>
 
@@ -64,7 +81,7 @@
       </section>
 
       <footer class="app__footer">
-        <p>Uso interno para despacho contable · Los datos no salen de tu equipo · <strong>v6</strong></p>
+        <p>Uso interno para despacho contable · Los datos no salen de tu equipo · <strong>v7</strong></p>
       </footer>
     </main>
 

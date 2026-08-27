@@ -167,11 +167,14 @@ Ya desplegada la app, hay dos maneras. Usa **solo una**:
 3. La primera vez, Google pedirá **acceder con tu cuenta** y autorizar el acceso de **solo lectura** a Drive. Acepta.
 4. En el selector, navega y elige la **carpeta** que contiene las facturas.
 5. La app lista, descarga y procesa los XML (verás una barra de progreso).
-6. Pulsa **⬇ Descargar Excel**.
+6. En **Campos para el Excel**, marca/desmarca las columnas que quieras incluir (puedes buscar un campo y usar "Seleccionar todo" / "Ninguno").
+7. Pulsa **⬇ Descargar Excel**.
+8. Si hubo archivos que no se pudieron leer, usa **Descargar reporte de errores** para obtenerlos en un CSV aparte (sin alargar la pantalla).
 
 **Opciones útiles:**
 - **Incluir subcarpetas**: activa para leer también las subcarpetas (p. ej., una por mes).
 - **Detectar errores comunes**: marca automáticamente RFC inválidos, UUID mal formados o duplicados, fechas/faltantes, etc.
+- **Selección de campos**: el diccionario de campos se arma con la unión de todos los XML leídos; eliges cuáles columnas incluir en el Excel final.
 
 ---
 

@@ -2,7 +2,7 @@ import './styles.css';
 import { getClientId, getApiKey, saveCredentials, clearCredentials, hasCredentials } from './config.js';
 import { pickFolder, listFiles, downloadFiles, isXmlFile } from './drive.js';
 import { parseInvoiceXml, detectIssues } from './xml.js';
-import { buildAndDownload } from './excel.js';
+import { buildAndDownload, downloadErrorReport } from './excel.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -16,11 +16,19 @@ const inputClientId = $('input-client-id');
 const inputApiKey = $('input-api-key');
 const cardProgress = $('card-progress');
 const cardResult = $('card-result');
+const cardFields = $('card-fields');
 const progressLabel = $('progress-label');
 const progressCount = $('progress-count');
 const progressFill = $('progress-fill');
 const resultSummary = $('result-summary');
-const resultLog = $('result-log');
+const resultErrors = $('result-errors');
+const errorsCount = $('errors-count');
+const btnErrors = $('btn-errors');
+const fieldSearch = $('field-search');
+const btnSelectAll = $('btn-select-all');
+const btnSelectNone = $('btn-select-none');
+const fieldsCount = $('fields-count');
+const fieldList = $('field-list');
 const optRecursive = $('opt-recursive');
 const optDetect = $('opt-detect-errors');
 
@@ -60,6 +68,101 @@ function setProgress(visible, label, countText, pct) {
   progressFill.style.width = `${Math.max(0, Math.min(100, pct || 0))}%`;
 }
 
+// ---------- Selector de campos ----------
+function groupOf(field) {
+  const dot = field.indexOf('.');
+  return dot === -1 ? 'Factura' : field.slice(0, dot);
+}
+
+function updateFieldsCount() {
+  const boxes = fieldList.querySelectorAll('input[type="checkbox"]');
+  let n = 0;
+  boxes.forEach((b) => { if (b.checked) n++; });
+  fieldsCount.textContent = `${n} de ${boxes.length} campos`;
+}
+
+function renderFieldPicker(fields) {
+  cardFields.hidden = false;
+  fieldList.innerHTML = '';
+
+  const groups = new Map();
+  for (const f of fields) {
+    const g = groupOf(f);
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g).push(f);
+  }
+
+  for (const [g, list] of groups) {
+    const wrap = document.createElement('div');
+    wrap.className = 'fields__group';
+
+    const title = document.createElement('div');
+    title.className = 'fields__group-title';
+    title.textContent = `${g} · ${list.length}`;
+    wrap.appendChild(title);
+
+    for (const f of list) {
+      const label = document.createElement('label');
+      label.className = 'fields__item';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = f;
+      cb.checked = true;
+      label.appendChild(cb);
+      label.appendChild(document.createTextNode(' ' + f));
+      wrap.appendChild(label);
+    }
+
+    fieldList.appendChild(wrap);
+  }
+
+  updateFieldsCount();
+}
+
+fieldSearch.addEventListener('input', () => {
+  const q = fieldSearch.value.trim().toLowerCase();
+  fieldList.querySelectorAll('.fields__group').forEach((group) => {
+    let visible = 0;
+    group.querySelectorAll('.fields__item').forEach((item) => {
+      const f = (item.querySelector('input').value || '').toLowerCase();
+      const show = !q || f.includes(q);
+      item.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    group.style.display = visible ? '' : 'none';
+  });
+});
+
+fieldList.addEventListener('change', updateFieldsCount);
+
+btnSelectAll.addEventListener('click', () => {
+  fieldList.querySelectorAll('input[type="checkbox"]').forEach((b) => { b.checked = true; });
+  updateFieldsCount();
+});
+btnSelectNone.addEventListener('click', () => {
+  fieldList.querySelectorAll('input[type="checkbox"]').forEach((b) => { b.checked = false; });
+  updateFieldsCount();
+});
+
+function getSelectedFields() {
+  const sel = [];
+  fieldList.querySelectorAll('input[type="checkbox"]').forEach((b) => {
+    if (b.checked) sel.push(b.value);
+  });
+  return sel;
+}
+
+function buildFacturas() {
+  const sel = getSelectedFields();
+  return lastResult.rawRows.map((r) => {
+    const out = { Archivo: r.Archivo };
+    for (const c of sel) {
+      out[c] = c === 'Observaciones' ? (r.__warnings || []).join('; ') : (r[c] == null ? '' : r[c]);
+    }
+    return out;
+  });
+}
+
 // ---------- Flujo principal ----------
 async function run() {
   if (busy) return;
@@ -71,7 +174,7 @@ async function run() {
   busy = true;
   btnPick.disabled = true;
   cardResult.hidden = true;
-  resultLog.hidden = true;
+  cardFields.hidden = true;
 
   const clientId = getClientId();
   const apiKey = getApiKey();
@@ -114,7 +217,7 @@ async function run() {
         'La carpeta "' + folder.name + '" no devolvió ningún archivo.\n\n' +
           '• Verifica que la carpeta contenga facturas XML y que tu cuenta de Google pueda verla.' +
           hintSubcarpetas +
-          '\n\nSi ya revisaste lo anterior, recarga la página con Ctrl+F5 y confirma que el pie de página dice "v6" (si no lo dice, aún estás viendo una versión anterior).'
+          '\n\nSi ya revisaste lo anterior, recarga la página con Ctrl+F5 y confirma que el pie de página dice "v7" (si no lo dice, aún estás viendo una versión anterior).'
       );
       return;
     }
@@ -158,7 +261,6 @@ async function run() {
           observaciones: warnings.join('; '),
           ...parsed.meta,
         };
-        // Asignar fila del diccionario con nombre de archivo y observaciones
         const row = { Archivo: r.name, ...parsed.row };
         row['__warnings'] = warnings;
         row['__uuid'] = parsed.uuid;
@@ -210,32 +312,19 @@ async function run() {
       if (dup) reg.observaciones = (reg.observaciones ? reg.observaciones + '; ' : '') + 'UUID duplicado';
     }
 
-    // 6) Construir columnas ordenadas del diccionario (unión de campos)
-    const columns = ['Archivo'];
+    // 6) Diccionario de campos (unión de todos los XML)
+    const fields = [];
     const seen = new Set();
     for (const row of rawRows) {
       for (const k of Object.keys(row)) {
         if (k === 'Archivo' || k === '__warnings' || k === '__uuid') continue;
         if (!seen.has(k)) {
           seen.add(k);
-          columns.push(k);
+          fields.push(k);
         }
       }
     }
-    columns.push('Observaciones');
-
-    const facturas = rawRows.map((r) => {
-      const out = { Archivo: r.Archivo };
-      for (const c of columns) {
-        if (c === 'Archivo') continue;
-        if (c === 'Observaciones') {
-          out[c] = r.__warnings.join('; ');
-        } else {
-          out[c] = r[c] == null ? '' : r[c];
-        }
-      }
-      return out;
-    });
+    fields.push('Observaciones');
 
     const summary = {
       folderName: folder.name,
@@ -247,10 +336,12 @@ async function run() {
       generatedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
     };
 
-    lastResult = { facturas, registro, summary };
+    const errores = registro.filter((r) => r.estado === 'ERROR');
+    lastResult = { rawRows, fields, registro, summary, errores };
 
-    // 7) Mostrar resultado
-    renderResult(summary, registro);
+    // 7) Mostrar resultado y selector de campos
+    renderResult(summary, errores);
+    renderFieldPicker(fields);
 
     setProgress(false);
   } catch (err) {
@@ -262,10 +353,9 @@ async function run() {
   }
 }
 
-function renderResult(summary, registro) {
+function renderResult(summary, errores) {
   cardResult.hidden = false;
 
-  const errores = registro.filter((r) => r.estado === 'ERROR');
   resultSummary.innerHTML = `
     <div class="stat"><span class="stat__num">${summary.filesFound}</span><span class="stat__lbl">XML encontrados</span></div>
     <div class="stat"><span class="stat__num">${summary.okCount}</span><span class="stat__lbl">Facturas procesadas</span></div>
@@ -275,11 +365,10 @@ function renderResult(summary, registro) {
   `;
 
   if (errores.length) {
-    resultLog.hidden = false;
-    resultLog.textContent = 'Archivos que NO se pudieron procesar:\n' +
-      errores.map((r) => `• ${r.archivo} — ${r.error}`).join('\n');
+    resultErrors.hidden = false;
+    errorsCount.textContent = `${errores.length} archivo(s) no se pudieron procesar.`;
   } else {
-    resultLog.hidden = true;
+    resultErrors.hidden = true;
   }
 }
 
@@ -287,10 +376,16 @@ btnDownload.addEventListener('click', (e) => {
   e.preventDefault();
   if (!lastResult) return;
   try {
-    buildAndDownload(lastResult);
+    const facturas = buildFacturas();
+    buildAndDownload({ facturas, registro: lastResult.registro, summary: lastResult.summary });
   } catch (err) {
     alert('No se pudo generar el Excel: ' + (err && err.message ? err.message : err));
   }
+});
+
+btnErrors.addEventListener('click', () => {
+  if (!lastResult || !lastResult.errores.length) return;
+  downloadErrorReport(lastResult.errores);
 });
 
 btnPick.addEventListener('click', run);
