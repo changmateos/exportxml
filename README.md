@@ -179,7 +179,7 @@ Ya desplegada la app, hay dos maneras. Usa **solo una**:
 
 | Problema | Solución |
 |----------|----------|
-| Al elegir carpeta sale un error de Google / `origin_mismatch` | Agrega la URL de Vercel a **Orígenes de JavaScript autorizados** (Parte 4). |
+| `Error 400: origin_mismatch` | La URL **exacta** del navegador no está en **Credenciales → tu ID de cliente OAuth → Orígenes de JavaScript autorizados**. Copia la URL de la barra de direcciones **sin** la barra final ni rutas (ej. `https://exportxml-xxxx.vercel.app`), agrégala tal cual y guarda. Si pruebas una URL de *preview* de Vercel, agrégala también o usa la URL de producción. |
 | `access_denied` o "Esta app está bloqueada" | Tu correo no está en **Público de prueba** del consentimiento OAuth (Paso 1.3). Agrégalo. |
 | La ventana de Google se bloquea | Permite ventanas emergentes (pop-ups) para ese sitio. |
 | No encuentra archivos | Verifica que la carpeta tenga archivos `.xml` (no "Documentos de Google"). Si están en una **Unidad compartida**, confirma que tu cuenta puede verla. Si los XML están en subcarpetas, activa "Incluir subcarpetas". Recarga con **Ctrl+F5** y revisa que el pie de página diga `v5` (si no, estás viendo una versión anterior). |
