@@ -81,6 +81,7 @@ async function driveFetch(url, token, retried = false) {
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
+
   if (res.status === 401 && !retried) {
     // Token vencido: solicitar uno nuevo (silencioso si ya se autorizó antes).
     if (!lastClientId) throw new Error('La sesión expiró; vuelve a elegir la carpeta.');
@@ -89,9 +90,34 @@ async function driveFetch(url, token, retried = false) {
     currentToken = resp.access_token;
     return driveFetch(url, currentToken, true);
   }
+
   if (!res.ok) {
-    throw new Error(`Error de Google Drive (${res.status}): ${res.statusText}`);
+    // Extraer el motivo exacto que devuelve la API para poder diagnosticar.
+    let message = res.statusText || '';
+    let reason = '';
+    try {
+      const body = await res.json();
+      if (body && body.error) {
+        message = body.error.message || message;
+        reason = ((body.error.errors || [])[0] || {}).reason || '';
+      }
+    } catch (_) {
+      // cuerpo no JSON; se usa el statusText
+    }
+
+    // Reintento automático cuando la API reporta límite de peticiones.
+    if (!retried && (res.status === 429 || reason === 'userRateLimitExceeded' || reason === 'rateLimitExceeded')) {
+      await new Promise((r) => setTimeout(r, 1500));
+      return driveFetch(url, token, true);
+    }
+
+    const parts = [`Error de Google Drive (${res.status}`];
+    if (message) parts.push(`: ${message}`);
+    if (reason) parts.push(` [${reason}]`);
+    parts.push(')');
+    throw new Error(parts.join(''));
   }
+
   return res;
 }
 
@@ -123,7 +149,7 @@ export async function listFiles(folderId, { recursive, clientId, onProgress }) {
     currentToken = resp.access_token;
   }
 
-  const run = async (corporaAllDrives) => {
+  const run = async (mode) => {
     const files = [];
     const folders = [];
     const queue = [folderId];
@@ -139,8 +165,12 @@ export async function listFiles(folderId, { recursive, clientId, onProgress }) {
         url.searchParams.set('fields', 'nextPageToken,files(id,name,mimeType)');
         url.searchParams.set('pageSize', '1000');
         url.searchParams.set('supportsAllDrives', 'true');
-        // allDrives: busca en "Mi unidad" + todas las Unidades compartidas.
-        if (corporaAllDrives) url.searchParams.set('corpora', 'allDrives');
+        // Modos de listado para cubrir "Mi unidad" y "Unidades compartidas":
+        //   'user'      -> modo por defecto (Mi unidad)
+        //   'allDrives' -> corpora=allDrives (Mi unidad + unidades compartidas)
+        //   'legacy'    -> includeItemsFromAllDrives (método anterior)
+        if (mode === 'allDrives') url.searchParams.set('corpora', 'allDrives');
+        if (mode === 'legacy') url.searchParams.set('includeItemsFromAllDrives', 'true');
         if (pageToken) url.searchParams.set('pageToken', pageToken);
 
         const res = await driveFetch(url, currentToken);
@@ -164,13 +194,20 @@ export async function listFiles(folderId, { recursive, clientId, onProgress }) {
     return { files, folders };
   };
 
-  let result = await run(true);
-  // Red de seguridad: si no devolvió nada, reintentar con el modo por defecto.
-  if (result.files.length === 0 && result.folders.length === 0) {
-    result = await run(false);
+  // Prueba primero el modo más común (Mi unidad) y, si no encuentra nada,
+  // intenta con unidades compartidas. Si un modo falla, se prueba el siguiente.
+  const modes = ['user', 'allDrives', 'legacy'];
+  let lastError = null;
+  for (const mode of modes) {
+    try {
+      const result = await run(mode);
+      if (result.files.length > 0 || result.folders.length > 0) return result;
+    } catch (err) {
+      lastError = err;
+    }
   }
-
-  return result;
+  if (lastError) throw lastError;
+  return { files: [], folders: [] };
 }
 
 /**

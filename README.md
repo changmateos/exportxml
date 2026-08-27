@@ -180,7 +180,8 @@ Ya desplegada la app, hay dos maneras. Usa **solo una**:
 | Al elegir carpeta sale un error de Google / `origin_mismatch` | Agrega la URL de Vercel a **Orígenes de JavaScript autorizados** (Parte 4). |
 | `access_denied` o "Esta app está bloqueada" | Tu correo no está en **Público de prueba** del consentimiento OAuth (Paso 1.3). Agrégalo. |
 | La ventana de Google se bloquea | Permite ventanas emergentes (pop-ups) para ese sitio. |
-| No encuentra archivos | Verifica que la carpeta tenga archivos `.xml` (no "Documentos de Google"). Si están en una **Unidad compartida**, confirma que tu cuenta puede verla. Si los XML están en subcarpetas, activa "Incluir subcarpetas". Recarga con **Ctrl+F5** y revisa que el pie de página diga `v3` (si no, estás viendo una versión anterior). |
+| No encuentra archivos | Verifica que la carpeta tenga archivos `.xml` (no "Documentos de Google"). Si están en una **Unidad compartida**, confirma que tu cuenta puede verla. Si los XML están en subcarpetas, activa "Incluir subcarpetas". Recarga con **Ctrl+F5** y revisa que el pie de página diga `v5` (si no, estás viendo una versión anterior). |
+| Error de Google Drive 403 | Copia el texto completo del error (incluye un motivo entre corchetes, p. ej. `[userRateLimitExceeded]` o `[insufficientFilePermissions]`). Suele ser: (1) la cuenta no tiene permiso sobre la carpeta, (2) se excedió el límite de peticiones (se reintenta solo), o (3) el administrador de Google Workspace restringe la API de Drive. |
 | Se corta con carpetas muy grandes | Vuelve a ejecutar; si expira la sesión, elige de nuevo la carpeta. |
 | El Excel no baja | Revisa que el navegador no bloquee descargas. |
 
