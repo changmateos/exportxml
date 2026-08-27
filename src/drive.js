@@ -113,8 +113,9 @@ function isFolder(f) {
 }
 
 /**
- * Lista todos los archivos (no carpetas) de una carpeta y, si recursive=true,
- * también de sus subcarpetas. Incluye archivos alojados en "Unidades compartidas".
+ * Lista los archivos (no carpetas) de una carpeta y, si recursive=true, también
+ * de sus subcarpetas. Devuelve { files, folders }.
+ * Cubre "Mi unidad" y "Unidades compartidas" (Shared Drives).
  */
 export async function listFiles(folderId, { recursive, clientId, onProgress }) {
   if (!currentToken) {
@@ -122,41 +123,53 @@ export async function listFiles(folderId, { recursive, clientId, onProgress }) {
     currentToken = resp.access_token;
   }
 
-  const files = [];
-  const queue = [folderId];
-  const seenDirs = new Set([folderId]);
+  const run = async (corporaAllDrives) => {
+    const files = [];
+    const folders = [];
+    const queue = [folderId];
+    const seenDirs = new Set([folderId]);
 
-  while (queue.length) {
-    const dirId = queue.shift();
-    let pageToken = null;
+    while (queue.length) {
+      const dirId = queue.shift();
+      let pageToken = null;
 
-    do {
-      const url = new URL('https://www.googleapis.com/drive/v3/files');
-      url.searchParams.set('q', `'${dirId}' in parents and trashed = false`);
-      url.searchParams.set('fields', 'nextPageToken,files(id,name,mimeType)');
-      url.searchParams.set('pageSize', '1000');
-      // Necesario para ver archivos dentro de "Unidades compartidas" (Shared Drives)
-      url.searchParams.set('supportsAllDrives', 'true');
-      url.searchParams.set('includeItemsFromAllDrives', 'true');
-      if (pageToken) url.searchParams.set('pageToken', pageToken);
+      do {
+        const url = new URL('https://www.googleapis.com/drive/v3/files');
+        url.searchParams.set('q', `'${dirId}' in parents and trashed = false`);
+        url.searchParams.set('fields', 'nextPageToken,files(id,name,mimeType)');
+        url.searchParams.set('pageSize', '1000');
+        url.searchParams.set('supportsAllDrives', 'true');
+        // allDrives: busca en "Mi unidad" + todas las Unidades compartidas.
+        if (corporaAllDrives) url.searchParams.set('corpora', 'allDrives');
+        if (pageToken) url.searchParams.set('pageToken', pageToken);
 
-      const data = await driveFetch(url, currentToken);
-      for (const f of data.files || []) {
-        if (isFolder(f)) {
-          if (recursive && !seenDirs.has(f.id)) {
-            seenDirs.add(f.id);
-            queue.push(f.id);
+        const data = await driveFetch(url, currentToken);
+        for (const f of data.files || []) {
+          if (isFolder(f)) {
+            folders.push({ id: f.id, name: f.name || '' });
+            if (recursive && !seenDirs.has(f.id)) {
+              seenDirs.add(f.id);
+              queue.push(f.id);
+            }
+          } else {
+            files.push({ id: f.id, name: f.name || '', mimeType: f.mimeType || '' });
           }
-        } else {
-          files.push({ id: f.id, name: f.name || '', mimeType: f.mimeType || '' });
         }
-      }
-      pageToken = data.nextPageToken || null;
-      if (onProgress) onProgress(files.length);
-    } while (pageToken);
+        pageToken = data.nextPageToken || null;
+        if (onProgress) onProgress(files.length);
+      } while (pageToken);
+    }
+
+    return { files, folders };
+  };
+
+  let result = await run(true);
+  // Red de seguridad: si no devolvió nada, reintentar con el modo por defecto.
+  if (result.files.length === 0 && result.folders.length === 0) {
+    result = await run(false);
   }
 
-  return files;
+  return result;
 }
 
 /**

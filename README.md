@@ -180,7 +180,7 @@ Ya desplegada la app, hay dos maneras. Usa **solo una**:
 | Al elegir carpeta sale un error de Google / `origin_mismatch` | Agrega la URL de Vercel a **Orígenes de JavaScript autorizados** (Parte 4). |
 | `access_denied` o "Esta app está bloqueada" | Tu correo no está en **Público de prueba** del consentimiento OAuth (Paso 1.3). Agrégalo. |
 | La ventana de Google se bloquea | Permite ventanas emergentes (pop-ups) para ese sitio. |
-| No encuentra archivos | Verifica que la carpeta contenga archivos `.xml` y que estén como archivos (no "Documentos de Google"). |
+| No encuentra archivos | Verifica que la carpeta tenga archivos `.xml` (no "Documentos de Google"). Si están en una **Unidad compartida**, confirma que tu cuenta puede verla. Si los XML están en subcarpetas, activa "Incluir subcarpetas". Recarga con **Ctrl+F5** y revisa que el pie de página diga `v3` (si no, estás viendo una versión anterior). |
 | Se corta con carpetas muy grandes | Vuelve a ejecutar; si expira la sesión, elige de nuevo la carpeta. |
 | El Excel no baja | Revisa que el navegador no bloquee descargas. |
 

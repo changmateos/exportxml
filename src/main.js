@@ -84,7 +84,7 @@ async function run() {
 
     // 2) Listar archivos
     setProgress(true, 'Buscando archivos en Drive…', '');
-    const allFiles = await listFiles(folder.id, {
+    const { files: allFiles, folders } = await listFiles(folder.id, {
       recursive: optRecursive.checked,
       clientId,
       onProgress: (n) => {
@@ -106,10 +106,15 @@ async function run() {
 
     if (files.length === 0) {
       setProgress(false);
+      const hintSubcarpetas =
+        folders.length > 0 && !optRecursive.checked
+          ? '\n\n• La carpeta tiene subcarpetas: activa "Incluir subcarpetas" si los XML están dentro.'
+          : '';
       alert(
-        'No se encontraron archivos en la carpeta seleccionada.\n\n' +
-          'Verifica que la carpeta contenga facturas XML y que tu cuenta tenga acceso a ella. ' +
-          'Si están en una "Unidad compartida" de Drive, confirma que puedes verla con tu usuario.'
+        'La carpeta "' + folder.name + '" no devolvió ningún archivo.\n\n' +
+          '• Verifica que la carpeta contenga facturas XML y que tu cuenta de Google pueda verla.' +
+          hintSubcarpetas +
+          '\n\nSi ya revisaste lo anterior, recarga la página con Ctrl+F5 y confirma que el pie de página dice "v3" (si no lo dice, aún estás viendo una versión anterior).'
       );
       return;
     }
