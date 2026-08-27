@@ -15,11 +15,11 @@ Aplicación web (minimalista, pensada para un despacho de contadores) que:
 
 | Hoja | Contenido |
 |------|-----------|
-| **Facturas** | Diccionario de datos completo: **una fila por factura** y **cada campo del XML es una columna** (`Folio`, `Total`, `Emisor.Rfc`, `Concepto[1].ClaveProdServ`, `Complemento.TimbreFiscalDigital.UUID`, etc.). |
+| **Facturas** | Diccionario de datos completo: **una fila por factura** y **cada campo del XML es una columna** (`Folio`, `Total`, `Emisor.Rfc`, `Concepto.ClaveProdServ`, `Complemento.TimbreFiscalDigital.UUID`, etc.). |
 | **Registro** | Una fila por archivo con estado (`OK`, `CON OBSERVACIONES`, `ERROR`), UUID, RFCs, totales y las observaciones detectadas. |
 | **Resumen** | Conteos generales, UUID duplicados y fecha de generación. |
 
-Los conceptos/impuestos que se repiten se expanden como columnas con índice (`Concepto[1]`, `Concepto[2]`, `Traslado[1]`, …). Todo se guarda como texto para no perder ceros a la izquierda de folios o RFCs.
+Los elementos que se repiten (conceptos, traslados, retenciones, doctos relacionados…) se consolidan en **una sola columna** y sus valores se unen con ` | ` para no exceder el límite de columnas de Excel (16 384). Ej.: `Concepto.ClaveProdServ` = `01010101 | 01010102 | …`. Todo se guarda como texto para no perder ceros a la izquierda de folios o RFCs.
 
 ---
 

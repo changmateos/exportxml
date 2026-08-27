@@ -18,7 +18,9 @@ function setKey(row, key, value) {
  * Aplana recursivamente un elemento XML.
  * - Atributos del elemento raíz -> clave simple ("Folio", "Total").
  * - Atributos de elementos anidados -> "Padre.Hijo.Atributo".
- * - Elementos repetidos -> índice "[n]" (empieza en 1).
+ * - Elementos repetidos (Concepto, Traslado, DoctoRelacionado…) -> se
+ *   consolidan en la MISMA columna: sus valores se concatenan con " | ".
+ *   Así cada campo es una columna sin reventar el límite de columnas de Excel.
  * - Texto de un elemento hoja -> clave de su ruta.
  */
 function flattenElement(el, prefix, row) {
@@ -38,7 +40,8 @@ function flattenElement(el, prefix, row) {
     if (text && prefix) setKey(row, prefix, text);
   }
 
-  // Agrupar hijos por nombre local para indexar los repetidos
+  // Agrupar hijos por nombre local. Los repetidos comparten la misma ruta
+  // (columna) y setKey() concatena sus valores con " | ".
   const groups = new Map();
   for (const c of children) {
     const n = c.localName || c.tagName;
@@ -47,12 +50,10 @@ function flattenElement(el, prefix, row) {
   }
 
   for (const [name, list] of groups.entries()) {
-    const multi = list.length > 1;
-    list.forEach((c, i) => {
-      const seg = multi ? `${name}[${i + 1}]` : name;
-      const childPrefix = prefix ? `${prefix}.${seg}` : seg;
+    for (const c of list) {
+      const childPrefix = prefix ? `${prefix}.${name}` : name;
       flattenElement(c, childPrefix, row);
-    });
+    }
   }
 }
 
