@@ -27,6 +27,7 @@ const btnErrors = $('btn-errors');
 const fieldSearch = $('field-search');
 const btnSelectAll = $('btn-select-all');
 const btnSelectNone = $('btn-select-none');
+const btnResetFields = $('btn-reset-fields');
 const fieldsCount = $('fields-count');
 const fieldList = $('field-list');
 const optRecursive = $('opt-recursive');
@@ -34,6 +35,8 @@ const optDetect = $('opt-detect-errors');
 
 let lastResult = null;
 let busy = false;
+
+const STORAGE_FIELDS = 'exportxml_field_selection';
 
 // ---------- Modal de configuración ----------
 function openSettings() {
@@ -81,6 +84,27 @@ function updateFieldsCount() {
   fieldsCount.textContent = `${n} de ${boxes.length} campos`;
 }
 
+// Guarda en localStorage los campos DESMARCADOS, para recordar la selección
+// entre corridas (los campos nuevos quedan marcados por defecto).
+function saveFieldSelection() {
+  const deselected = [];
+  fieldList.querySelectorAll('input[type="checkbox"]').forEach((b) => {
+    if (!b.checked) deselected.push(b.value);
+  });
+  localStorage.setItem(STORAGE_FIELDS, JSON.stringify(deselected));
+}
+
+function loadFieldSelection() {
+  try {
+    const raw = localStorage.getItem(STORAGE_FIELDS);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch (_) {
+    return new Set();
+  }
+}
+
 function renderFieldPicker(fields) {
   cardFields.hidden = false;
   fieldList.innerHTML = '';
@@ -116,6 +140,14 @@ function renderFieldPicker(fields) {
     fieldList.appendChild(wrap);
   }
 
+  // Aplicar la selección guardada de corridas anteriores.
+  const saved = loadFieldSelection();
+  if (saved.size) {
+    fieldList.querySelectorAll('input[type="checkbox"]').forEach((b) => {
+      if (saved.has(b.value)) b.checked = false;
+    });
+  }
+
   updateFieldsCount();
 }
 
@@ -133,14 +165,24 @@ fieldSearch.addEventListener('input', () => {
   });
 });
 
-fieldList.addEventListener('change', updateFieldsCount);
+fieldList.addEventListener('change', () => {
+  updateFieldsCount();
+  saveFieldSelection();
+});
 
 btnSelectAll.addEventListener('click', () => {
   fieldList.querySelectorAll('input[type="checkbox"]').forEach((b) => { b.checked = true; });
   updateFieldsCount();
+  saveFieldSelection();
 });
 btnSelectNone.addEventListener('click', () => {
   fieldList.querySelectorAll('input[type="checkbox"]').forEach((b) => { b.checked = false; });
+  updateFieldsCount();
+  saveFieldSelection();
+});
+btnResetFields.addEventListener('click', () => {
+  localStorage.removeItem(STORAGE_FIELDS);
+  fieldList.querySelectorAll('input[type="checkbox"]').forEach((b) => { b.checked = true; });
   updateFieldsCount();
 });
 
@@ -217,7 +259,7 @@ async function run() {
         'La carpeta "' + folder.name + '" no devolvió ningún archivo.\n\n' +
           '• Verifica que la carpeta contenga facturas XML y que tu cuenta de Google pueda verla.' +
           hintSubcarpetas +
-          '\n\nSi ya revisaste lo anterior, recarga la página con Ctrl+F5 y confirma que el pie de página dice "v7" (si no lo dice, aún estás viendo una versión anterior).'
+          '\n\nSi ya revisaste lo anterior, recarga la página con Ctrl+F5 y confirma que el pie de página dice "v8" (si no lo dice, aún estás viendo una versión anterior).'
       );
       return;
     }

@@ -49,11 +49,12 @@
       <section class="card" id="card-fields" hidden>
         <div class="card__body">
           <h2 class="card__title">Campos para el Excel</h2>
-          <p class="hint">Marca los campos (columnas) que quieres incluir. La columna <strong>Archivo</strong> siempre se incluye.</p>
+          <p class="hint">Marca los campos (columnas) que quieres incluir. La columna <strong>Archivo</strong> siempre se incluye. Tu selección se guarda y se recuerda en las próximas corridas.</p>
           <div class="fields__toolbar">
             <input type="search" id="field-search" placeholder="Buscar campo…" />
             <button type="button" id="btn-select-all" class="btn btn--ghost btn--small">Seleccionar todo</button>
             <button type="button" id="btn-select-none" class="btn btn--ghost btn--small">Ninguno</button>
+            <button type="button" id="btn-reset-fields" class="btn btn--ghost btn--small">Restablecer</button>
             <span id="fields-count" class="fields__count"></span>
           </div>
           <div id="field-list" class="fields__list"></div>
@@ -81,7 +82,7 @@
       </section>
 
       <footer class="app__footer">
-        <p>Uso interno para despacho contable · Los datos no salen de tu equipo · <strong>v7</strong></p>
+        <p>Uso interno para despacho contable · Los datos no salen de tu equipo · <strong>v8</strong></p>
       </footer>
     </main>
 

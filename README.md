@@ -174,7 +174,7 @@ Ya desplegada la app, hay dos maneras. Usa **solo una**:
 **Opciones útiles:**
 - **Incluir subcarpetas**: activa para leer también las subcarpetas (p. ej., una por mes).
 - **Detectar errores comunes**: marca automáticamente RFC inválidos, UUID mal formados o duplicados, fechas/faltantes, etc.
-- **Selección de campos**: el diccionario de campos se arma con la unión de todos los XML leídos; eliges cuáles columnas incluir en el Excel final.
+- **Selección de campos**: el diccionario de campos se arma con la unión de todos los XML leídos; eliges cuáles columnas incluir en el Excel final. La selección se **guarda automáticamente** y se recuerda en las próximas corridas (usa "Restablecer" para volver a incluir todo).
 
 ---
 
