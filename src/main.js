@@ -1,6 +1,6 @@
 import './styles.css';
 import { getClientId, getApiKey, saveCredentials, clearCredentials, hasCredentials } from './config.js';
-import { pickFolder, listXmlFiles, downloadFiles } from './drive.js';
+import { pickFolder, listFiles, downloadFiles, isXmlFile } from './drive.js';
 import { parseInvoiceXml, detectIssues } from './xml.js';
 import { buildAndDownload } from './excel.js';
 
@@ -82,9 +82,9 @@ async function run() {
     folder = await pickFolder({ clientId, apiKey });
     if (!folder) return; // usuario canceló
 
-    // 2) Listar XML
-    setProgress(true, 'Buscando archivos XML en Drive…', '');
-    const files = await listXmlFiles(folder.id, {
+    // 2) Listar archivos
+    setProgress(true, 'Buscando archivos en Drive…', '');
+    const allFiles = await listFiles(folder.id, {
       recursive: optRecursive.checked,
       clientId,
       onProgress: (n) => {
@@ -92,9 +92,25 @@ async function run() {
       },
     });
 
+    // Candidatos por nombre/extensión (sin distinguir mayúsculas) o por MIME XML
+    let files = allFiles.filter((f) => isXmlFile(f.name, f.mimeType));
+    let fallbackMode = false;
+
+    // Respaldo: si no hay candidatos por nombre, escanear el contenido de todos
+    // los archivos para detectar los que realmente son XML (p. ej. sin extensión).
+    if (files.length === 0 && allFiles.length > 0) {
+      fallbackMode = true;
+      files = allFiles;
+      setProgress(true, 'No se detectaron archivos por nombre; escaneando contenido…', `${files.length} archivo(s)`);
+    }
+
     if (files.length === 0) {
       setProgress(false);
-      alert('No se encontraron archivos XML en la carpeta seleccionada.');
+      alert(
+        'No se encontraron archivos en la carpeta seleccionada.\n\n' +
+          'Verifica que la carpeta contenga facturas XML y que tu cuenta tenga acceso a ella. ' +
+          'Si están en una "Unidad compartida" de Drive, confirma que puedes verla con tu usuario.'
+      );
       return;
     }
 
@@ -152,6 +168,9 @@ async function run() {
           uuidMap.get(parsed.uuid).push(r.name);
         }
       } else {
+        // En modo respaldo (escaneo por contenido), los archivos que no son XML
+        // se omiten sin contarse como error.
+        if (fallbackMode && !r.error) continue;
         errorCount++;
         registro.push({
           archivo: r.name,
@@ -215,7 +234,7 @@ async function run() {
 
     const summary = {
       folderName: folder.name,
-      filesFound: files.length,
+      filesFound: okCount + errorCount,
       okCount,
       errorCount,
       warningCount,

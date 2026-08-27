@@ -95,15 +95,28 @@ async function driveFetch(url, token, retried = false) {
   return res;
 }
 
-function isXmlFile(name, mimeType) {
-  const lower = (name || '').toLowerCase();
-  return lower.endsWith('.xml') || (mimeType || '').toLowerCase().includes('xml');
+const XML_MIME = new Set(['text/xml', 'application/xml', 'application/xhtml+xml']);
+
+/**
+ * Determina si un archivo es XML.
+ * La comparación es insensible a mayúsculas/minúsculas:
+ * acepta ".xml", ".XML", ".Xml", etc., además del MIME correspondiente.
+ */
+export function isXmlFile(name, mimeType) {
+  const lower = (name || '').trim().toLowerCase();
+  const mime = (mimeType || '').trim().toLowerCase();
+  return lower.endsWith('.xml') || XML_MIME.has(mime) || mime.endsWith('+xml');
+}
+
+function isFolder(f) {
+  return f.mimeType === 'application/vnd.google-apps.folder';
 }
 
 /**
- * Lista todos los archivos XML de una carpeta (y subcarpetas si recursive=true).
+ * Lista todos los archivos (no carpetas) de una carpeta y, si recursive=true,
+ * también de sus subcarpetas. Incluye archivos alojados en "Unidades compartidas".
  */
-export async function listXmlFiles(folderId, { recursive, clientId, onProgress }) {
+export async function listFiles(folderId, { recursive, clientId, onProgress }) {
   if (!currentToken) {
     const resp = await requestAccessToken(clientId);
     currentToken = resp.access_token;
@@ -122,17 +135,20 @@ export async function listXmlFiles(folderId, { recursive, clientId, onProgress }
       url.searchParams.set('q', `'${dirId}' in parents and trashed = false`);
       url.searchParams.set('fields', 'nextPageToken,files(id,name,mimeType)');
       url.searchParams.set('pageSize', '1000');
+      // Necesario para ver archivos dentro de "Unidades compartidas" (Shared Drives)
+      url.searchParams.set('supportsAllDrives', 'true');
+      url.searchParams.set('includeItemsFromAllDrives', 'true');
       if (pageToken) url.searchParams.set('pageToken', pageToken);
 
       const data = await driveFetch(url, currentToken);
       for (const f of data.files || []) {
-        if (f.mimeType === 'application/vnd.google-apps.folder') {
+        if (isFolder(f)) {
           if (recursive && !seenDirs.has(f.id)) {
             seenDirs.add(f.id);
             queue.push(f.id);
           }
-        } else if (isXmlFile(f.name, f.mimeType)) {
-          files.push({ id: f.id, name: f.name });
+        } else {
+          files.push({ id: f.id, name: f.name || '', mimeType: f.mimeType || '' });
         }
       }
       pageToken = data.nextPageToken || null;
@@ -174,6 +190,7 @@ export async function downloadFiles(files, { clientId, onProgress }) {
       try {
         const url = new URL(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(f.id)}`);
         url.searchParams.set('alt', 'media');
+        url.searchParams.set('supportsAllDrives', 'true');
         const res = await driveFetch(url, currentToken);
         const text = await decode(res);
         results[i] = { id: f.id, name: f.name, text, error: null };
