@@ -50,13 +50,15 @@ Los conceptos/impuestos que se repiten se expanden como columnas con índice (`C
 
 1. Ve a **API y servicios** → **Pantalla de consentimiento de OAuth**.
 2. Elige **Externo** → **Crear**.
-3. Rellena:
+3. En **Información de la aplicación** completa **todos** los campos obligatorios:
    - **Nombre de la aplicación**: `ExportXML`.
-   - **Correo de asistencia**: tu correo.
-   - **Correo de desarrollador**: tu correo (abajo, en "Datos de contacto").
-4. En **Público**, deja solo la cuenta que corresponda (no necesitas marcar nada especial).
-5. Pulsa **Guardar y continuar** hasta terminar.
-6. Al final, en la pestaña **Público de prueba**, haz clic en **Agregar usuarios** y agrega el correo de **cada contador** que vaya a usar la app. Esto es lo correcto para un uso interno: **no necesitas publicar ni verificar la app**.
+   - **Correo de asistencia al usuario**: tu correo.
+   - **Dominio autorizado**: el dominio donde corre la app. Si usas Vercel, escribe `vercel.app` (o tu dominio si usas uno propio). Déjalo sin `https://`.
+4. Abajo, en **Información de contacto del desarrollador**, escribe tu correo en **Direcciones de correo electrónico**. ⚠️ Este campo es **obligatorio**: si queda vacío, Google bloquea el inicio de sesión con *"no cumple con la política OAuth 2.0"*.
+5. Pulsa **Guardar y continuar** hasta terminar y volver al resumen.
+6. Confirma que el **Estado de publicación** quede en **Pruebas** (Testing). **No** lo pongas en "Producción".
+7. En la pestaña **Público de prueba**, pulsa **Agregar usuarios** y añade el correo de **cada contador** que vaya a usar la app (incluido el tuyo).
+8. Espera **1–2 minutos** a que Google propague los cambios y vuelve a intentar.
 
 ### 1.4 Crear el OAuth Client ID
 
